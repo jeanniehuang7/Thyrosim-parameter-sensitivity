@@ -150,21 +150,17 @@ global p tspan ic; % semicolons there to suppress output, so you don't really ne
 total_params = size(p,2);
 
 initval = 0.1;
-step = 0.99;
+step = 0.99; 0.1
 endval = 10;
 num_steps = floor((endval-initval)/step)+1;
 %matrix = zeros(3,total_params,num_steps)
-matrix = zeros(total_params,num_steps+1); %matrix(i,0) will be the parameter without any changes (1x)
+matrix = zeros(total_params,num_steps); %matrix(i,0) will be the parameter without any changes (1x)
 
 for i = 1:total_params %iterates through all parameters, access with p(i) %need to exclude parameters that don't have variability
     %disp(p(i))
     initial_p = p(i);
     
-    [t,q] = ode45(@ODEs, tspan, ic);
-    [avgT4,rangeT4,standT4,avgT3,rangeT3,standT3,avgTSH,rangeTSH,standTSH]= measure(t,q);
-    matrix(i,1)=avgT4;
-    
-    j =2;
+    j =1;
     for v = initval:step:endval %0.1:0.1:10 %init val, step val, end val
        p(i)=initial_p*v;
        [t,q] = ode45(@ODEs, tspan, ic);
@@ -174,10 +170,15 @@ for i = 1:total_params %iterates through all parameters, access with p(i) %need 
     end
     %disp(p)
    
-    p(i) = initial_p; %reset before you iterate to the next parameter
+    p(i) = initial_p %reset before you iterate to the next parameter
 end
 
-[h,L,MX,MED]=violin(transpose(matrix)); %error! don't have the statistics and machine learning toolbox :( 
+
+%[h,L,MX,MED]=violin(transpose(matrix)); %error! don't have the statistics and machine learning toolbox :( 
+%vs = violinplot(transpose(matrix)); %error! don't have the toolbox :(
+
+csvwrite('parameter_variations.txt',transpose(matrix))
+type('parameter_variations.txt')
 end
 
 % Syntax for declaring functions in MatLab with input x and output y:
