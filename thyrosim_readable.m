@@ -149,9 +149,9 @@ global p tspan ic; % semicolons there to suppress output, so you don't really ne
 %disp(p)
 total_params = size(p,2);
 
-initval = 0.1;
-step = 0.99; 0.1
-endval = 10;
+initval = -1;
+step = .1; 
+endval = 1;
 num_steps = floor((endval-initval)/step)+1;
 %matrix = zeros(3,total_params,num_steps)
 matrix = zeros(total_params,num_steps); %matrix(i,0) will be the parameter without any changes (1x)
@@ -161,8 +161,8 @@ for i = 1:total_params %iterates through all parameters, access with p(i) %need 
     initial_p = p(i);
     
     j =1;
-    for v = initval:step:endval %0.1:0.1:10 %init val, step val, end val
-       p(i)=initial_p*v;
+    for v = initval:step:endval  %init val, step val, end val
+       p(i)=initial_p*10^(v);
        [t,q] = ode45(@ODEs, tspan, ic);
        [avgT4,rangeT4,standT4,avgT3,rangeT3,standT3,avgTSH,rangeTSH,standTSH]= measure(t,q);
        matrix(i,j)=avgT4;
