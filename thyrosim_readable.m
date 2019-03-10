@@ -154,7 +154,9 @@ step = .1;
 endval = 1;
 num_steps = floor((endval-initval)/step)+1;
 %matrix = zeros(3,total_params,num_steps)
-matrix = zeros(total_params,num_steps); %matrix(i,0) will be the parameter without any changes (1x)
+matrixT4 = zeros(total_params,num_steps); %matrix(i,0) will be the parameter without any changes (1x)
+matrixT3 = zeros(total_params,num_steps);
+matrixTSH= zeros(total_params,num_steps);
 
 for i = 1:total_params %iterates through all parameters, access with p(i) %need to exclude parameters that don't have variability
     %disp(p(i))
@@ -165,7 +167,9 @@ for i = 1:total_params %iterates through all parameters, access with p(i) %need 
        p(i)=initial_p*10^(v);
        [t,q] = ode45(@ODEs, tspan, ic);
        [avgT4,rangeT4,standT4,avgT3,rangeT3,standT3,avgTSH,rangeTSH,standTSH]= measure(t,q);
-       matrix(i,j)=avgT4;
+       matrixT4(i,j)=avgT4;
+       matrixT3(i,j)=avgT3;
+       matrixTSH(i,j)=avgTSH;
        j=j+1;
     end
     %disp(p)
@@ -177,8 +181,11 @@ end
 %[h,L,MX,MED]=violin(transpose(matrix)); %error! don't have the statistics and machine learning toolbox :( 
 %vs = violinplot(transpose(matrix)); %error! don't have the toolbox :(
 
-csvwrite('parameter_variations.txt',transpose(matrix))
-type('parameter_variations.txt')
+csvwrite('parameter_variationsT4.txt',transpose(matrixT4))
+csvwrite('parameter_variationsT3.txt',transpose(matrixT3))
+csvwrite('parameter_variationsTSH.txt',transpose(matrixTSH))
+%type displays the file contents in the command window
+%type('parameter_variations.txt')
 end
 
 % Syntax for declaring functions in MatLab with input x and output y:
