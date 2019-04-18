@@ -10,7 +10,15 @@
 %   The stand alone version runs fine, but lack the ability to easily add/chain
 %   inputs.
 % RUN:          >> thyrosim
+
 %-------------------------------------------------- 
+% PROJECT: Thyrosim Sensitivity Analysis
+% DATE: 3/12/19
+% PREPARED BY: Jeannie Huang for CS185
+% CHANGES: Created a vary parameters function and helper measure function
+% COMMENTS: Parameter descriptions commented by Cymfenee Dean-Phifer, 
+%           Eva Wang, Jeannie Huang and Christina De Cesaris
+%--------------------------------------------------
 
 % Main function
 function thyrosim
@@ -23,7 +31,7 @@ initIC;     % Initial conditions
 initInputs; % Inputs
 initParams; % Parameters
 
-% trying out a sensitivity analysis
+% Sensitivity analysis
 varyParams;
 
 % Solve ODE
@@ -143,29 +151,36 @@ p(47) = 3.2;            %Vp; linerization constant for michaelis menten
 p(48) = 5.2;            %VTSH; linerization constant for michaelis menten relating to TSH
 end
 
+% Sensitivity Analysis
+% For every parameter, change it slightly by a range of 0.1x to 10x, or
+% p*10^(-1) to p*(10^1). Measure T3, TSH, and T4 output at each variation (averaged over time). 
 function varyParams()
 global p tspan ic; % semicolons there to suppress output, so you don't really need it here
-%class(p)
-%disp(p)
-total_params = size(p,2);
+total_params = size(p,2); %number of parameters 
 
+%param = p*10^(x) where x is [-1,1,0.1] range
 initval = -1;
 step = .1; 
 endval = 1;
 num_steps = floor((endval-initval)/step)+1;
-%matrix = zeros(3,total_params,num_steps)
-matrixT4 = zeros(total_params,num_steps); %matrix(i,0) will be the parameter without any changes (1x)
+
+%initialize matrices with 48 parameter rows and num_step (currently 20) columns.
+%first column will be p*0.1, the last column will be p*10. 
+%each value in matrix will be the output averaged over the time period using the new parameter. 
+matrixT4 = zeros(total_params,num_steps); %matrix(i,num_steps/2) will be the parameter without any changes (p*1)
 matrixT3 = zeros(total_params,num_steps);
 matrixTSH= zeros(total_params,num_steps);
 
-for i = 1:total_params %iterates through all parameters, access with p(i) %need to exclude parameters that don't have variability
+for i = 1:total_params %iterates through all parameters, access with p(i)
     %disp(p(i))
     initial_p = p(i);
     
     j =1;
-    for v = initval:step:endval  %init val, step val, end val
-       p(i)=initial_p*10^(v);
-       [t,q] = ode45(@ODEs, tspan, ic);
+    for v = initval:step:endval   
+       p(i)=initial_p*10^(v); %new parameter
+       % solve the ODE using the new parameter
+       [t,q] = ode45(@ODEs, tspan, ic); 
+       % grab measurements for T3,T4,TSH and fill matrices. 
        [avgT4,rangeT4,standT4,avgT3,rangeT3,standT3,avgTSH,rangeTSH,standTSH]= measure(t,q);
        matrixT4(i,j)=avgT4;
        matrixT3(i,j)=avgT3;
@@ -174,25 +189,21 @@ for i = 1:total_params %iterates through all parameters, access with p(i) %need 
     end
     %disp(p)
    
-    p(i) = initial_p %reset before you iterate to the next parameter
+    p(i) = initial_p %reset current parameter before you iterate to the next parameter
 end
 
-
-%[h,L,MX,MED]=violin(transpose(matrix)); %error! don't have the statistics and machine learning toolbox :( 
-%vs = violinplot(transpose(matrix)); %error! don't have the toolbox :(
-
+%output to csv for data vis options in python, because matlab version doesn't have all the toolboxes
 csvwrite('parameter_variationsT4.txt',transpose(matrixT4))
 csvwrite('parameter_variationsT3.txt',transpose(matrixT3))
 csvwrite('parameter_variationsTSH.txt',transpose(matrixTSH))
-%type displays the file contents in the command window
-%type('parameter_variations.txt')
+%type('parameter_variations.txt') %type displays the file contents in the command window
+
 end
 
 % Syntax for declaring functions in MatLab with input x and output y:
 % function [y1,...,yN] = myfuncname(x1,...,xM) 
 function [avgT4,rangeT4,standT4,avgT3,rangeT3,standT3,avgTSH,rangeTSH,standTSH]= measure(t,q) 
-%class(q)
-% bad to copy and paste from the graph function, I will rearrange it once I know it works
+% from the graph function--some rearranging can be made 
 global p;
 % Conversion factors
 % 777: molecular weight of T4
@@ -209,6 +220,7 @@ y2 = q(:,4)*T3conv;     % T3; this grabs all of the 4th column of q (all timepoi
 y3 = q(:,7)*TSHconv;    % TSH; this grabs all of the 7th column of q (all timepoints for variable q7)
 t  = t/24;              % Convert time to days
 
+% calculate std,range,and averages for T3, T4, TSH in case we need these values
 avgT4 = mean(y1);
 rangeT4 = max(y1)-min(y1);
 standT4 = std(y1);
@@ -298,6 +310,7 @@ subplot(3,1,1);
 plot(t,y1);
 ylabel('T4 mcg/L');
 ylim([0 max(y1)*1.2]);
+
 
 % T3 plot
 subplot(3,1,2);
